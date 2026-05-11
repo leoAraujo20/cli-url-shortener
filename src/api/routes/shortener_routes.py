@@ -22,7 +22,9 @@ def shorten_original_url(request: URLrequest, session=Depends(get_session)):
     session.commit()
     session.refresh(db_url)
 
-    short_url = f"{settings.base_url}/{encode_base62(db_url.id)}"
+    encoded_id = encode_base62(db_url.id)
+
+    short_url = f"{settings.base_url}/{encoded_id}"
 
     return URLresponse(
         id=db_url.id, original_url=db_url.original_url, short_url=short_url

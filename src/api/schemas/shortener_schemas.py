@@ -7,8 +7,17 @@ class URLrequest(BaseModel):
     @field_validator("url", mode="before")
     @classmethod
     def normalize_url(cls, value):
-        cleaned_value = value.strip().replace("\\", "")
-        return cleaned_value
+        cleaned = value.strip().strip('"').strip("'")
+        cleaned = cleaned.replace("\\/", "/")
+
+        return cleaned
+
+    @field_validator("url")
+    @classmethod
+    def force_only_http(cls, value):
+        if not (value.startswith("http://") or value.startswith("https://")):
+            value = "https://" + value
+        return value
 
 
 class URLresponse(BaseModel):
