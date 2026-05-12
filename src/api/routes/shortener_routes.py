@@ -2,6 +2,7 @@ from http import HTTPStatus
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import RedirectResponse
+from sqlmodel import select
 
 from src.api.core.base62 import decode_base62, encode_base62
 from src.api.core.database import get_session
@@ -17,18 +18,24 @@ settings = get_settings()
     "/shorten", response_model=URLresponse, status_code=HTTPStatus.CREATED
 )
 def shorten_original_url(request: URLrequest, session=Depends(get_session)):
-    db_url = URL(original_url=request.url)
-    session.add(db_url)
-    session.commit()
-    session.refresh(db_url)
+    statement = select(URL).where(URL.original_url == request.url)
+    db_url = session.exec(statement).first()
 
-    encoded_id = encode_base62(db_url.id)
-
-    short_url = f"{settings.base_url}/{encoded_id}"
-
-    return URLresponse(
-        id=db_url.id, original_url=db_url.original_url, short_url=short_url
-    )
+    if not db_url:
+        db_url = URL(original_url=request.url)
+        session.add(db_url)
+        try:
+            session.commit()
+            session.refresh(db_url)
+        except Exception as e:
+            session.rollback()
+            raise HTTPException(
+                status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+                detail=f"Erro ao salvar URL: no banco de dados {str(e)}",
+            )
+    short_id = encode_base62(db_url.id)
+    short_url = f"{settings.base_url}/{short_id}"
+    return URLresponse(short_url=short_url)
 
 
 @shortener_router.get("/{short_id}", status_code=HTTPStatus.FOUND)
