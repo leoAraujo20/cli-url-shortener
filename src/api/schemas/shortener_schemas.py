@@ -24,3 +24,4 @@ class URLresponse(BaseModel):
     id: int
     original_url: str
     short_url: str
+    message: str

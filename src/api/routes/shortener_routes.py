@@ -1,6 +1,6 @@
 from http import HTTPStatus
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from fastapi.responses import RedirectResponse
 from sqlmodel import select
 
@@ -17,9 +17,12 @@ settings = get_settings()
 @shortener_router.post(
     "/shorten", response_model=URLresponse, status_code=HTTPStatus.CREATED
 )
-def shorten_original_url(request: URLrequest, session=Depends(get_session)):
+def shorten_original_url(
+    request: URLrequest, response: Response, session=Depends(get_session)
+):
     statement = select(URL).where(URL.original_url == request.url)
     db_url = session.exec(statement).first()
+    response_message = ""
 
     if not db_url:
         db_url = URL(original_url=request.url)
@@ -27,15 +30,25 @@ def shorten_original_url(request: URLrequest, session=Depends(get_session)):
         try:
             session.commit()
             session.refresh(db_url)
+            response_message = "URL encurtada com sucesso!"
         except Exception as e:
             session.rollback()
             raise HTTPException(
                 status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
                 detail=f"Erro ao salvar URL: no banco de dados {str(e)}",
             )
+    else:
+        response.status_code = HTTPStatus.OK
+        response_message = "URL já encurtada anteriormente."
+
     short_id = encode_base62(db_url.id)
     short_url = f"{settings.base_url}/{short_id}"
-    return URLresponse(short_url=short_url)
+    return URLresponse(
+        id=db_url.id,
+        original_url=db_url.original_url,
+        short_url=short_url,
+        message=response_message,
+    )
 
 
 @shortener_router.get("/{short_id}", status_code=HTTPStatus.FOUND)

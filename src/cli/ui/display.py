@@ -17,8 +17,9 @@ def show_loading(message: str):
         yield
 
 
-def display_success(original_url: str, short_url: str):
+def display_success(original_url: str, short_url: str, custom_message: str):
     mensagem = (
+        f"[bold #61afef]{custom_message}[/]\n\n"
         f"[bold white]Original:[/]\n{original_url}\n\n"
         f"[bold #e5c07b]Encurtada:[/]\n[link={short_url}][bold #98c379]{short_url}[/][/link]\n\n"
         f"[italic dim]Copiado para a área de transferência![/]"

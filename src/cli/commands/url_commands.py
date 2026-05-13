@@ -15,8 +15,8 @@ def shorten(url: Annotated[str, typer.Argument(help="The URL to shorten")]):
     try:
         with show_loading("Encurtando a URL..."):
             time.sleep(5)
-            shortened_url = shorten_url(url)
-        pyperclip.copy(shortened_url)
-        display_success(url, shortened_url)
+            response = shorten_url(url)
+        pyperclip.copy(response["short_url"])
+        display_success(url, response["short_url"], response["message"])
     except Exception as e:
         display_error(f"Não foi possível encurtar a URL: {str(e)}")
