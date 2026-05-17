@@ -1,4 +1,3 @@
-import time
 from typing import Annotated
 
 import pyperclip
@@ -11,12 +10,17 @@ url_app = typer.Typer(help="Comandos relacionados a URLs")
 
 
 @url_app.command("shorten", help="Encurta uma URL e copia para a área de transferência")
-def shorten(url: Annotated[str, typer.Argument(help="The URL to shorten")]):
+def shorten(url: Annotated[str, typer.Argument(help="A URL que você deseja encurtar")]):
     try:
         with show_loading("Encurtando a URL..."):
-            time.sleep(5)
             response = shorten_url(url)
         pyperclip.copy(response["short_url"])
-        display_success(url, response["short_url"], response["message"])
+        display_success(
+            original_url=response["original_url"],
+            short_url=response["short_url"],
+            message=response["message"],
+        )
+    except ValueError as e:
+        display_error(f"Erro de validação: {str(e)}")
     except Exception as e:
         display_error(f"Não foi possível encurtar a URL: {str(e)}")

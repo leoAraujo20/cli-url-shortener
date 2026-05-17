@@ -1,8 +1,22 @@
+from urllib.parse import urlparse
+
 from pydantic import BaseModel, field_validator
+
+from src.api.core.exceptions import InvalidURLException
 
 
 class URLrequest(BaseModel):
     url: str
+
+    @field_validator("url")
+    @classmethod
+    def valdiate_url(cls, value):
+        if not (value.startswith("http://") or value.startswith("https://")):
+            value = "https://" + value
+        parsed = urlparse(value)
+        if not parsed.netloc:
+            raise InvalidURLException(value, "A URL enviada não é válida")
+        return value
 
     @field_validator("url", mode="before")
     @classmethod
@@ -11,13 +25,6 @@ class URLrequest(BaseModel):
         cleaned = cleaned.replace("\\/", "/")
 
         return cleaned
-
-    @field_validator("url")
-    @classmethod
-    def force_only_http(cls, value):
-        if not (value.startswith("http://") or value.startswith("https://")):
-            value = "https://" + value
-        return value
 
 
 class URLresponse(BaseModel):
