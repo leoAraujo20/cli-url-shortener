@@ -4,7 +4,7 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
-from src.api.core.exceptions import InvalidURLException
+from src.api.core.exceptions import InvalidURLException, URLNotFoundException
 from src.api.routes.shortener_routes import shortener_router
 
 app = FastAPI()
@@ -30,6 +30,18 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     return JSONResponse(
         status_code=HTTPStatus.UNPROCESSABLE_CONTENT,
         content={"detail": exc.errors(), "body": exc.body},
+    )
+
+
+@app.exception_handler(URLNotFoundException)
+async def url_not_found_exception_handler(request: Request, exc: URLNotFoundException):
+    return JSONResponse(
+        status_code=HTTPStatus.NOT_FOUND,
+        content={
+            "error": "URL_NAO_ENCONTRADA",
+            "message": exc.message,
+            "short_id": exc.short_id,
+        },
     )
 
 

@@ -18,7 +18,7 @@ def shorten(url: Annotated[str, typer.Argument(help="A URL que você deseja encu
         display_success(
             original_url=response["original_url"],
             short_url=response["short_url"],
-            message=response["message"],
+            custom_message=response["message"],
         )
     except ValueError as e:
         display_error(f"Erro de validação: {str(e)}")
