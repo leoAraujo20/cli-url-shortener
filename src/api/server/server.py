@@ -58,17 +58,20 @@ async def url_not_found_exception_handler(request: Request, exc: URLNotFoundExce
 
 @app.exception_handler(StarletteHTTPException)
 async def http_exception_handler(request: Request, exc: StarletteHTTPException):
-    detail = exc.detail
-    message = detail if isinstance(detail, str) else "Erro HTTP"
-    details = None if isinstance(detail, str) else detail
-    return JSONResponse(
-        status_code=exc.status_code,
-        content=_error_payload(
-            code="ERRO_HTTP",
-            message=message,
-            details=details,
-        ),
-    )
+    if isinstance(exc.detail, str):
+        message = exc.detail
+        details = None
+    else:
+        message = "Erro HTTP"
+        details = exc.detail
+        return JSONResponse(
+            status_code=exc.status_code,
+            content=_error_payload(
+                code="ERRO_HTTP",
+                message=message,
+                details=details,
+            ),
+        )
 
 
 @app.exception_handler(Exception)
