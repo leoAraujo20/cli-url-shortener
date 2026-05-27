@@ -64,14 +64,14 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
     else:
         message = "Erro HTTP"
         details = exc.detail
-        return JSONResponse(
-            status_code=exc.status_code,
-            content=_error_payload(
-                code="ERRO_HTTP",
-                message=message,
-                details=details,
-            ),
-        )
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=_error_payload(
+            code="ERRO_HTTP",
+            message=message,
+            details=details,
+        ),
+    )
 
 
 @app.exception_handler(Exception)
