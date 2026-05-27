@@ -32,7 +32,7 @@ def shorten_url(url: str) -> dict:
 
     if not response.ok:
         message, code = _extract_error_message(response)
-        if code in ("URL_INVALIDA", "URL_INVALIDA"):
+        if code in ("URL_INVALIDA", "ERROS_DE_VALIDACAO"):
             raise ValueError(f"URL inválida: {message}")
         raise Exception(f"Erro na API {message}")
 
