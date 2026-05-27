@@ -5,6 +5,18 @@ from src.cli.core.settings import get_settings
 settings = get_settings()
 
 
+def _normalize_url(url: str) -> str:
+    cleaned = url.strip().strip('"').strip("'")
+    cleaned = cleaned.replace("\\/", "/")
+
+    if not cleaned:
+        raise ValueError("A URL não pode ser vazia")
+    if not cleaned.startswith(("http://", "https://")):
+        cleaned = "https://" + cleaned
+
+    return cleaned
+
+
 def _extract_error_message(response: requests.Response) -> tuple[str, str | None]:
     try:
         payload = response.json()
@@ -26,9 +38,13 @@ def _extract_error_message(response: requests.Response) -> tuple[str, str | None
 
 
 def shorten_url(url: str) -> dict:
+    url = _normalize_url(url)
     shorten_endpoint = f"{settings.base_url}/shorten"
     data = {"url": url}
-    response = requests.post(shorten_endpoint, json=data)
+    try:
+        response = requests.post(shorten_endpoint, json=data, timeout=10)
+    except requests.exceptions.RequestException as e:
+        raise Exception(f"Erro de conexão com a API: {e}")
 
     if not response.ok:
         message, code = _extract_error_message(response)
