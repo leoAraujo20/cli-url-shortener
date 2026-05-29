@@ -1,15 +1,15 @@
 from http import HTTPStatus
 
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.responses import RedirectResponse
-from sqlmodel import select
+from sqlmodel import col, func, select
 
 from src.api.core.base62 import decode_base62, encode_base62
 from src.api.core.database import get_session
 from src.api.core.exceptions import URLNotFoundException
 from src.api.core.settings import get_settings
-from src.api.models.shortener_models import URL
-from src.api.schemas.shortener_schemas import URLrequest, URLresponse
+from src.api.models.shortener_models import URL, URLAccess
+from src.api.schemas.shortener_schemas import URLrequest, URLresponse, URLStatsResponse
 
 shortener_router = APIRouter()
 settings = get_settings()
@@ -53,7 +53,9 @@ def shorten_original_url(
 
 
 @shortener_router.get("/{short_id}", status_code=HTTPStatus.FOUND)
-def redirect_to_original_url(short_id: str, session=Depends(get_session)):
+def redirect_to_original_url(
+    short_id: str, request: Request, session=Depends(get_session)
+):
     try:
         url_id = decode_base62(short_id)
     except ValueError:
@@ -65,4 +67,75 @@ def redirect_to_original_url(short_id: str, session=Depends(get_session)):
     if not db_url:
         raise URLNotFoundException(short_id=short_id)
 
+    user_agent = request.headers.get("user-agent")
+    referrer = request.headers.get("referer")
+    ip_address = request.client.host if request.client else None
+
+    access_record = URLAccess(
+        url_id=url_id, user_agent=user_agent, referrer=referrer, ip_address=ip_address
+    )
+    session.add(access_record)
+    session.commit()
+
     return RedirectResponse(db_url.original_url)
+
+
+@shortener_router.get(
+    "/stats/{short_id}", status_code=HTTPStatus.OK, response_model=URLStatsResponse
+)
+def get_url_stats(short_id: str, session=Depends(get_session)):
+    try:
+        url_id = decode_base62(short_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST, detail="URL curta inválida"
+        )
+
+    db_url = session.get(URL, url_id)
+    if not db_url:
+        raise URLNotFoundException(short_id=short_id)
+
+    statement = select(func.count(col(URLAccess.id))).where(URLAccess.url_id == url_id)
+    total_accesses = session.exec(statement).one()
+
+    if total_accesses == 0:
+        return URLStatsResponse(
+            original_url=db_url.original_url,
+            total_accesses=0,
+            top_referrers={},
+            unique_visitors=0,
+            recent_accesses=[],
+        )
+
+    statement = select(func.count(func.distinct(URLAccess.ip_address))).where(
+        URLAccess.url_id == url_id
+    )
+    unique_visitors = session.exec(statement).one()
+
+    statement = (
+        select(URLAccess.referrer, func.count(col(URLAccess.id)))
+        .where(URLAccess.url_id == url_id)
+        .group_by(URLAccess.referrer)
+        .order_by(func.count(col(URLAccess.id)).desc())
+    )
+
+    referrers_data = session.exec(statement).all()
+    top_referrers = {
+        (ref if ref else "Tráfego Direto"): count for ref, count in referrers_data
+    }
+
+    statement = (
+        select(URLAccess)
+        .where(URLAccess.url_id == url_id)
+        .order_by(col(URLAccess.accessed_at).desc())
+        .limit(5)
+    )
+    recent_accesses = session.exec(statement).all()
+
+    return URLStatsResponse(
+        original_url=db_url.original_url,
+        total_accesses=total_accesses,
+        top_referrers=top_referrers,
+        unique_visitors=unique_visitors,
+        recent_accesses=recent_accesses,
+    )

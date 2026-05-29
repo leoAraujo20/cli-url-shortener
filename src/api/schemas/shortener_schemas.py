@@ -1,6 +1,7 @@
+from datetime import datetime
 from urllib.parse import urlparse
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, ConfigDict, field_validator
 
 from src.api.core.exceptions import InvalidURLException
 
@@ -32,3 +33,20 @@ class URLresponse(BaseModel):
     original_url: str
     short_url: str
     message: str
+
+
+class AccessRecord(BaseModel):
+    accessed_at: datetime
+    user_agent: str | None
+    referrer: str | None
+    ip_address: str | None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class URLStatsResponse(BaseModel):
+    original_url: str
+    total_accesses: int
+    top_referrers: dict[str, int]
+    unique_visitors: int
+    recent_accesses: list[AccessRecord]
