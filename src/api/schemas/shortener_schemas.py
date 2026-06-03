@@ -46,6 +46,7 @@ class AccessRecord(BaseModel):
 
 class URLStatsResponse(BaseModel):
     original_url: str
+    short_url: str
     total_accesses: int
     top_referrers: dict[str, int]
     unique_visitors: int

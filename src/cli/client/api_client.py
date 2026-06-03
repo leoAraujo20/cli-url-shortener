@@ -53,3 +53,19 @@ def shorten_url(url: str) -> dict:
         raise Exception(f"Erro na API {message}")
 
     return response.json()
+
+
+def get_url_stats(short_id: str) -> dict:
+    stats_endpoint = f"{settings.base_url}/stats/{short_id}"
+    try:
+        response = requests.get(stats_endpoint, timeout=10)
+    except requests.exceptions.RequestException as e:
+        raise Exception(f"Erro de conexão com a API: {e}")
+
+    if not response.ok:
+        message, code = _extract_error_message(response)
+        if code == "URL_CURTA_INVALIDA":
+            raise ValueError(f"ID curto inválido: {message}")
+        raise Exception(f"Erro na API: {message}")
+
+    return response.json()

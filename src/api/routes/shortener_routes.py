@@ -98,9 +98,12 @@ def get_url_stats(short_id: str, session=Depends(get_session)):
     statement = select(func.count(col(URLAccess.id))).where(URLAccess.url_id == url_id)
     total_accesses = session.exec(statement).one()
 
+    short_url = f"{settings.base_url}/{short_id}"
+
     if total_accesses == 0:
         return URLStatsResponse(
             original_url=db_url.original_url,
+            short_url=short_url,
             total_accesses=0,
             top_referrers={},
             unique_visitors=0,
@@ -134,6 +137,7 @@ def get_url_stats(short_id: str, session=Depends(get_session)):
 
     return URLStatsResponse(
         original_url=db_url.original_url,
+        short_url=short_url,
         total_accesses=total_accesses,
         top_referrers=top_referrers,
         unique_visitors=unique_visitors,
