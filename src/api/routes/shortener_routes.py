@@ -9,14 +9,19 @@ from src.api.core.database import get_session
 from src.api.core.exceptions import URLNotFoundException
 from src.api.core.settings import get_settings
 from src.api.models.shortener_models import URL, URLAccess
-from src.api.schemas.shortener_schemas import URLrequest, URLresponse, URLStatsResponse
+from src.api.schemas.shortener_schemas import (
+    ShortenResponse,
+    URLrequest,
+    URLResponse,
+    URLStatsResponse,
+)
 
 shortener_router = APIRouter()
 settings = get_settings()
 
 
 @shortener_router.post(
-    "/shorten", response_model=URLresponse, status_code=HTTPStatus.CREATED
+    "/shorten", response_model=ShortenResponse, status_code=HTTPStatus.CREATED
 )
 def shorten_original_url(
     request: URLrequest, response: Response, session=Depends(get_session)
@@ -44,7 +49,7 @@ def shorten_original_url(
 
     short_id = encode_base62(db_url.id)
     short_url = f"{settings.base_url}/{short_id}"
-    return URLresponse(
+    return ShortenResponse(
         id=db_url.id,
         original_url=db_url.original_url,
         short_url=short_url,
@@ -143,3 +148,24 @@ def get_url_stats(short_id: str, session=Depends(get_session)):
         unique_visitors=unique_visitors,
         recent_accesses=recent_accesses,
     )
+
+
+@shortener_router.get(
+    "/links",
+    status_code=HTTPStatus.OK,
+    response_model=list[URLResponse],
+)
+def get_urls(session=Depends(get_session)):
+    statement = select(URL).limit(50)
+    urls = session.exec(statement).all()
+
+    urls_with_short_id = [
+        {
+            "id": url.id,
+            "original_url": url.original_url,
+            "short_url": f"{settings.base_url}/{encode_base62(url.id)}",
+        }
+        for url in urls
+    ]
+
+    return urls_with_short_id
