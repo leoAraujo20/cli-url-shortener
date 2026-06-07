@@ -3,11 +3,12 @@ from typing import Annotated
 import pyperclip
 import typer
 
-from src.cli.client.api_client import get_url_stats, shorten_url
+from src.cli.client.api_client import get_url_stats, get_urls, shorten_url
 from src.cli.ui.display import (
     display_error,
     display_stats,
     display_success,
+    display_urls,
     show_loading,
 )
 
@@ -41,3 +42,13 @@ def stats(short_id: Annotated[str, typer.Argument(help="O ID curto da URL")]):
         display_error(f"Erro de validação: {str(e)}")
     except Exception as e:
         display_error(f"Não foi possível obter as estatísticas: {str(e)}")
+
+
+@url_app.command("list", help="Exibe todas as URLs encurtadas")
+def list():
+    try:
+        with show_loading("Obtendo URLs..."):
+            urls = get_urls()
+        display_urls(urls)
+    except Exception as e:
+        display_error(f"Não foi possível obter as URLs: {str(e)}")

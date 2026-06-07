@@ -116,3 +116,27 @@ def display_stats(stats: dict):
     console.print()
     console.print(panel)
     console.print()
+
+
+def display_urls(urls: list[dict]):
+    table = Table(
+        title="[bold #e5c07b]URLs Encurtadas[/]",
+        show_header=True,
+        header_style="bold #56b6c2",
+        box=box.SIMPLE,
+    )
+
+    table.add_column("ID", justify="right", style="dim")
+    table.add_column("Original", style="white")
+    table.add_column("Encurtada", style="bold #98c379")
+
+    for url in urls:
+        table.add_row(
+            str(url["id"]),
+            url["original_url"],
+            f"[link={url['short_url']}][bold #98c379]{url['short_url']}[/][/link]",
+        )
+
+    console.print()
+    console.print(table)
+    console.print()

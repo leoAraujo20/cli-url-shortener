@@ -69,3 +69,17 @@ def get_url_stats(short_id: str) -> dict:
         raise Exception(f"Erro na API: {message}")
 
     return response.json()
+
+
+def get_urls() -> list[dict]:
+    urls_endpoint = f"{settings.base_url}/links"
+    try:
+        response = requests.get(urls_endpoint, timeout=10)
+    except requests.exceptions.RequestException as e:
+        raise Exception(f"Erro de conexão com a API: {e}")
+
+    if not response.ok:
+        message, code = _extract_error_message(response)
+        raise Exception(f"Erro na API: {message}")
+
+    return response.json()
