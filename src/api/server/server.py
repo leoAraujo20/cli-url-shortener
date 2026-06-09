@@ -6,6 +6,7 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from src.api.core.exceptions import InvalidURLException, URLNotFoundException
+from src.api.routes.redirect_routes import redirect_router
 from src.api.routes.shortener_routes import shortener_router
 
 app = FastAPI()
@@ -86,3 +87,4 @@ async def generic_exception_handler(request: Request, exc: Exception):
 
 
 app.include_router(shortener_router)
+app.include_router(redirect_router)
