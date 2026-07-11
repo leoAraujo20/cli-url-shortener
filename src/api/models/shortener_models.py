@@ -2,8 +2,6 @@ from datetime import datetime, timezone
 
 from sqlmodel import Field, SQLModel
 
-from src.api.core.database import engine
-
 
 class URL(SQLModel, table=True):
     id: int = Field(default=None, primary_key=True)
@@ -17,6 +15,3 @@ class URLAccess(SQLModel, table=True):
     user_agent: str | None = None
     referrer: str | None = None
     ip_address: str | None = None
-
-
-SQLModel.metadata.create_all(engine)

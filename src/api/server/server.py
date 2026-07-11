@@ -5,11 +5,13 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from src.api.core.database import init_db
 from src.api.core.exceptions import InvalidURLException, URLNotFoundException
 from src.api.routes.redirect_routes import redirect_router
 from src.api.routes.shortener_routes import shortener_router
 
 app = FastAPI()
+init_db()
 
 
 def _error_payload(code: str, message: str, details: object | None = None) -> dict:
