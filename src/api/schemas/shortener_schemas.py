@@ -3,7 +3,6 @@ from urllib.parse import urlparse
 
 from pydantic import BaseModel, ConfigDict, field_validator
 
-from build.lib.api.schemas.shortener_schemas import URLresponse
 from src.api.core.exceptions import InvalidURLException
 
 
@@ -37,7 +36,7 @@ class URLResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class ShortenResponse(URLresponse):
+class ShortenResponse(URLResponse):
     message: str
 
 
