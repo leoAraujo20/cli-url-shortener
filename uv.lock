@@ -99,6 +99,11 @@ dependencies = [
     { name = "uvicorn" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "pytest" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "fastapi", extras = ["standard"], specifier = ">=0.136.1" },
@@ -112,6 +117,9 @@ requires-dist = [
     { name = "typer", specifier = ">=0.25.1" },
     { name = "uvicorn", specifier = ">=0.46.0" },
 ]
+
+[package.metadata.requires-dev]
+dev = [{ name = "pytest", specifier = ">=9.1.1" }]
 
 [[package]]
 name = "click"
