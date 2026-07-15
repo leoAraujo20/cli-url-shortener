@@ -60,3 +60,47 @@ def test_get_url_stats(client: TestClient):
     assert data["top_referrers"] == {}
     assert data["unique_visitors"] == 0
     assert data["recent_accesses"] == []
+
+
+def test_shorten_duplicate_url(client: TestClient):
+    payload = {"url": "https://www.python.org/"}
+    client.post("/api/shorten", json=payload)
+    response = client.post("/api/shorten", json=payload)
+
+    assert response.status_code == HTTPStatus.OK
+    data = response.json()
+
+    assert data["original_url"] == "https://www.python.org/"
+    assert data["message"] == "URL já encurtada anteriormente."
+
+
+def test_redirect_and_stats_not_found(client: TestClient):
+    nonexistent_short_id = "999999"
+    redirect_response = client.get(f"/{nonexistent_short_id}", follow_redirects=False)
+
+    assert redirect_response.status_code == HTTPStatus.NOT_FOUND
+
+    stats_response = client.get(f"/api/stats/{nonexistent_short_id}")
+
+    assert stats_response.status_code == HTTPStatus.NOT_FOUND
+    data = stats_response.json()
+
+    assert "error" in data
+    assert data["error"]["code"] == "URL_NAO_ENCONTRADA"
+    assert (
+        data["error"]["message"]
+        == f"URL com short_id '{nonexistent_short_id}' não encontrada."
+    )
+
+
+def test_redirect_invalid_base62(client: TestClient):
+    invalid_short_id = "!!!@@@###"
+
+    response = client.get(f"/{invalid_short_id}", follow_redirects=False)
+
+    assert response.status_code == HTTPStatus.BAD_REQUEST
+    data = response.json()
+
+    assert "error" in data
+    assert data["error"]["code"] == "ERRO_HTTP"
+    assert data["error"]["message"] == "URL curta inválida"
