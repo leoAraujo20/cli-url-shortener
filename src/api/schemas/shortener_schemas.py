@@ -57,16 +57,19 @@ class URLrequest(BaseModel):
                 value, "Não é permitido encurtar links de redes locais."
             )
 
+        if cls._is_private_ip(hostname):
+            raise InvalidURLException(
+                value, "Não é permitido encurtar endereços IP de redes privadas."
+            )
+
+    @staticmethod
+    def _is_private_ip(hostname: str) -> bool:
+        if hostname == "localhost":
+            return True
         try:
-            ip_obj = ipaddress.ip_address(hostname)
+            return not ipaddress.ip_address(hostname).is_global
         except ValueError:
-            pass
-        else:
-            if not ip_obj.is_global:
-                raise InvalidURLException(
-                    value, "Não é permitido encurtar endereços IP de redes privadas."
-                )
-        return value
+            return False
 
 
 class URLResponse(BaseModel):
