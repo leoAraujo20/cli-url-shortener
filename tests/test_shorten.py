@@ -1,5 +1,6 @@
 from http import HTTPStatus
 
+import pytest
 from fastapi.testclient import TestClient
 
 
@@ -104,3 +105,25 @@ def test_redirect_invalid_base62(client: TestClient):
     assert "error" in data
     assert data["error"]["code"] == "ERRO_HTTP"
     assert data["error"]["message"] == "URL curta inválida"
+
+
+@pytest.mark.parametrize(
+    "url, expected_message",
+    [
+        ("notaurl", "A URL enviada não possui um formato estrutural válido."),
+        ("http://localhost", "Não é permitido encurtar links de redes locais."),
+        ("http://0.0.0.0", "Não é permitido encurtar links de redes locais."),
+        (
+            "http://127.0.0.1",
+            "Não é permitido encurtar endereços IP de redes privadas.",
+        ),
+    ],
+)
+def test_shorten_url_validation_errors(client: TestClient, url, expected_message):
+    response = client.post("/api/shorten", json={"url": url})
+
+    assert response.status_code == HTTPStatus.UNPROCESSABLE_CONTENT
+    data = response.json()
+
+    assert data["error"]["code"] == "URL_INVALIDA"
+    assert data["error"]["message"] == expected_message
