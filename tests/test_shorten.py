@@ -63,6 +63,26 @@ def test_get_url_stats(client: TestClient):
     assert data["recent_accesses"] == []
 
 
+def test_get_url_stats_after_access(client: TestClient):
+    payload = {"url": "https://www.python.org/"}
+    create_res = client.post("/api/shorten", json=payload)
+    short_url = create_res.json()["short_url"]
+    short_id = short_url.split("/")[-1]
+
+    client.get(f"/{short_id}", follow_redirects=False)
+
+    response = client.get(f"/api/stats/{short_id}")
+
+    assert response.status_code == HTTPStatus.OK
+    data = response.json()
+
+    assert data["original_url"] == "https://www.python.org/"
+    assert data["short_url"] == short_url
+    assert data["total_accesses"] == 1
+    assert data["unique_visitors"] == 1
+    assert len(data["recent_accesses"]) == 1
+
+
 def test_shorten_duplicate_url(client: TestClient):
     payload = {"url": "https://www.python.org/"}
     client.post("/api/shorten", json=payload)
@@ -94,17 +114,19 @@ def test_redirect_and_stats_not_found(client: TestClient):
     )
 
 
-def test_redirect_invalid_base62(client: TestClient):
+def test_redirect_and_stats_invalid_base62(client: TestClient):
     invalid_short_id = "!!!@@@###"
 
-    response = client.get(f"/{invalid_short_id}", follow_redirects=False)
+    redirect_response = client.get(f"/{invalid_short_id}", follow_redirects=False)
+    stats_response = client.get(f"/api/stats/{invalid_short_id}")
 
-    assert response.status_code == HTTPStatus.BAD_REQUEST
-    data = response.json()
+    for response in (redirect_response, stats_response):
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+        data = response.json()
 
-    assert "error" in data
-    assert data["error"]["code"] == "ERRO_HTTP"
-    assert data["error"]["message"] == "URL curta inválida"
+        assert "error" in data
+        assert data["error"]["code"] == "ERRO_HTTP"
+        assert data["error"]["message"] == "URL curta inválida"
 
 
 @pytest.mark.parametrize(
@@ -127,3 +149,13 @@ def test_shorten_url_validation_errors(client: TestClient, url, expected_message
 
     assert data["error"]["code"] == "URL_INVALIDA"
     assert data["error"]["message"] == expected_message
+
+
+def test_list_urls_empty(client: TestClient):
+    response = client.get("api/links")
+
+    assert response.status_code == HTTPStatus.OK
+    data = response.json()
+
+    assert isinstance(data, list)
+    assert len(data) == 0

@@ -62,6 +62,8 @@ class URLrequest(BaseModel):
                 value, "Não é permitido encurtar endereços IP de redes privadas."
             )
 
+        return value
+
     @staticmethod
     def _is_private_ip(hostname: str) -> bool:
         if hostname == "localhost":
